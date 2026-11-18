@@ -12,9 +12,10 @@ Timer-System mit steuernder **Master-Seite** und ausgelagerter, per Link verteil
   - Live-Anzeige: aktueller Timer, Restzeit, Runde x von y, nächster Timer
   - Room-Code + **Kurzelink der Form `…/r/XXXXXX`** + QR-Code zum Verteilen
 - **Slave (`slave.html#room=XXXXXX`, erreicht über `/r/XXXXXX`)**
-  - Nur-Anzeige-Steuerung: große Restzeit, Status, Fortschrittsbalken, Runde, nächster Timer
+  - Zeigt den Timer **sofort und ohne Zwischenfenster** an (v2.1)
+  - Große Restzeit, Status, Fortschrittsbalken, Runde, nächster Timer
   - Warnt, wenn der Master länger als 6 Sekunden keine Updates sendet
-  - Spielt am Ende jedes Timers einen Ton ab (Setup per Link vollautomatisch)
+  - Spielt am Ende jedes Timers einen Ton ab: Wird der Ton vom Browser nicht automatisch freigegeben, erscheint nur ein dezenter Hinweisbutton – **ein Tipp irgendwo auf der Seite** schaltet den Ton frei (Browser-Sicherheitsregel)
 
 ## Firebase einrichten (einmalig, kostenlos)
 
@@ -46,8 +47,8 @@ Hinweis: Wer den 6-stelligen Room-Code kennt, kann den Timer lesen und steuern. 
 
 ## Slave-Seite öffnen
 
-- link aus der Master-Seite kopieren (oder QR-Code scannen) und auf den anderen Geräten öffnen
-- Auf jedem Slave einmal auf **🔊 Ton aktivieren** tippen – sonst blockiert der Browser den Endton. Danach spielt das Gerät bei jedem Timer-Ende automatisch mit an.
+- Link aus der Master-Seite kopieren (oder QR-Code scannen) und auf den anderen Geräten öffnen – die Anzeige startet sofort.
+- Falls der Browser den Ton blockiert, erscheint ein spezieller Hinweisbutton: **einmal irgendwo auf die Seite tippen**, danach spielt das Gerät bei jedem Timer-Ende automatisch mit an.
 
 ## Hosting (z. B. GitHub Pages)
 
