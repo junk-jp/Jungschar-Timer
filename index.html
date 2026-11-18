@@ -245,17 +245,32 @@
   };
 
   function parseConfig(text) {
-    const jsonLike = text.replace(/^\s*firebaseConfig\s*=\s*/m, '').replace(/;\s*$/, '').trim();
+    if (!text || !text.trim()) return null;
+    const clean = text
+      .replace(/[„“”]/g, '"')
+      .replace(/[‘’‛′]/g, "'")
+      .replace(/\bconst\s+firebaseConfig\s*=\s*/g, '')
+      .replace(/\bvar\s+firebaseConfig\s*=\s*/g, '')
+      .replace(/\bfirebaseConfig\s*=\s*/g, '');
+    const o = clean.indexOf('{');
+    const c = clean.lastIndexOf('}');
+    const body = o !== -1 && c > o ? clean.slice(o + 1, c) : clean;
     try {
-      const obj = JSON.parse(jsonLike);
-      if (obj && obj.apiKey) return obj;
+      const obj = JSON.parse(o !== -1 && c > o ? '{' + body + '}' : clean);
+      if (obj && obj.apiKey) return finishCfg(obj);
     } catch (e) {}
     const obj = {};
-    const re = /['"]?(\w+)['"]?\s*:\s*['"]([^'"]+)['"]/g;
+    const re = /["']?(\w+)["']?\s*:\s*["']?([^"',}\n]+)["']?/g;
     let m;
-    while ((m = re.exec(text)) !== null) obj[m[1]] = m[2];
-    if (obj.apiKey) return obj;
-    return null;
+    while ((m = re.exec(body)) !== null) obj[m[1]] = m[2].trim();
+    return obj.apiKey ? finishCfg(obj) : null;
+  }
+
+  function finishCfg(obj) {
+    if (!obj.databaseURL && obj.projectId) {
+      obj.databaseURL = 'https://' + obj.projectId + '-default-rtdb.firebaseio.com';
+    }
+    return obj;
   }
 
   function connect(config) {
@@ -543,7 +558,7 @@
   };
   $('btnSaveCfg').onclick = () => {
     const parsed = parseConfig($('cfgInput').value);
-    if (!parsed) { $('cfgErr').textContent = 'Konfiguration konnte nicht gelesen werden – bitte den kompletten firebaseConfig-Abschnitt einfügen.'; return; }
+    if (!parsed) { $('cfgErr').textContent = 'Konfiguration konnte nicht gelesen werden – bitte den kompletten firebaseConfig-Abschnitt aus Projekt-Einstellungen → Allgemein → Ihre Apps einfügen.'; return; }
     $('cfgErr').textContent = '';
     localStorage.setItem(LS_CFG, JSON.stringify(parsed));
     location.reload();

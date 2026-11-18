@@ -171,6 +171,35 @@
     return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
   }
 
+  function parseConfig(text) {
+    if (!text || !text.trim()) return null;
+    const clean = text
+      .replace(/[„“”]/g, '"')
+      .replace(/[‘’‛′]/g, "'")
+      .replace(/\bconst\s+firebaseConfig\s*=\s*/g, '')
+      .replace(/\bvar\s+firebaseConfig\s*=\s*/g, '')
+      .replace(/\bfirebaseConfig\s*=\s*/g, '');
+    const o = clean.indexOf('{');
+    const c = clean.lastIndexOf('}');
+    const body = o !== -1 && c > o ? clean.slice(o + 1, c) : clean;
+    try {
+      const obj = JSON.parse(o !== -1 && c > o ? '{' + body + '}' : clean);
+      if (obj && obj.apiKey) return finishCfg(obj);
+    } catch (e) {}
+    const obj = {};
+    const re = /["']?(\w+)["']?\s*:\s*["']?([^"',}\n]+)["']?/g;
+    let m;
+    while ((m = re.exec(body)) !== null) obj[m[1]] = m[2].trim();
+    return obj.apiKey ? finishCfg(obj) : null;
+  }
+
+  function finishCfg(obj) {
+    if (!obj.databaseURL && obj.projectId) {
+      obj.databaseURL = 'https://' + obj.projectId + '-default-rtdb.firebaseio.com';
+    }
+    return obj;
+  }
+
   function beep(kind) {
     if (!audioUnlocked) return;
     try {
@@ -291,11 +320,9 @@
       $('cfgErr').textContent = 'Bitte den 6-stelligen Room-Code von der Master-Seite eingeben.';
       return;
     }
-    const text = $('cfgInput').value.replace(/^\s*firebaseConfig\s*=\s*/m, '').replace(/;\s*$/, '').trim();
-    let parsed = null;
-    try { parsed = JSON.parse(text); } catch (e) {}
+    const parsed = parseConfig($('cfgInput').value);
     if (!parsed || !parsed.apiKey) {
-      $('cfgErr').textContent = 'Konnte die Konfiguration nicht lesen – bitte den firebaseConfig-Abschnitt einfügen.';
+      $('cfgErr').textContent = 'Konfiguration konnte nicht gelesen werden – bitte den kompletten firebaseConfig-Abschnitt aus der Master-Seite oder aus Projekt-Einstellungen → Ihre Apps einfügen.';
       return;
     }
     localStorage.setItem(LS_CFG, JSON.stringify(parsed));
