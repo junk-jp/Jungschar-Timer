@@ -134,8 +134,10 @@
   const $ = id => document.getElementById(id);
   const LS_CFG = 'mtFbCfg';
   const params = new URLSearchParams(location.search);
+  const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const getParam = name => (hashParams.get(name) !== null ? hashParams.get(name) : params.get(name));
 
-  let room = (params.get('room') || '').toUpperCase();
+  let room = (getParam('room') || '').toUpperCase();
   if (!room) {
     try { room = (localStorage.getItem('mtSlaveRoom') || '').toUpperCase(); } catch (e) {}
   }
@@ -146,9 +148,9 @@
     while (s.length % 4) s += '=';
     return atob(s);
   }
-  if (params.get('cfg')) {
+  if (getParam('cfg')) {
     try {
-      cfg = JSON.parse(b64url(params.get('cfg')));
+      cfg = JSON.parse(b64url(getParam('cfg')));
       try { localStorage.setItem(LS_CFG, JSON.stringify(cfg)); } catch (e) {}
       cfgStatus = null;
     } catch (e) {
@@ -343,8 +345,9 @@
       return;
     }
     localStorage.setItem(LS_CFG, JSON.stringify(parsed));
+    try { localStorage.setItem('mtSlaveRoom', newRoom); } catch (e) {}
     $('cfgErr').textContent = '';
-    location.href = location.pathname + '?room=' + newRoom + (params.get('cfg') ? '&cfg=' + encodeURIComponent(params.get('cfg')) : '');
+    location.href = location.pathname + '?v=v1.3#room=' + newRoom;
   };
 
   $('btnToggleCfg').onclick = () => {
