@@ -16,6 +16,7 @@ Timer-System mit steuernder **Master-Seite** und ausgelagerter, per Link verteil
   - Große Restzeit, Status, Fortschrittsbalken, Runde, nächster Timer
   - Warnt, wenn der Master länger als 6 Sekunden keine Updates sendet
   - Spielt am Ende jedes Timers einen Ton ab: Wird der Ton vom Browser nicht automatisch freigegeben, erscheint nur ein dezenter Hinweisbutton – **ein Tipp irgendwo auf der Seite** schaltet den Ton frei (Browser-Sicherheitsregel)
+  - **Ghost-Modus (v2.2):** Fällt die Verbindung zum Master aus (z. B. Handy im Hintergrund, Netzwechsel), läuft die Anzeige lokal weiter und schaltet am Timer-Ende selbstständig zum nächsten Timer weiter – **mit Ton**. Sobald der Master wieder sendet, gleicht sich die Anzeige automatisch zurück
 
 ## Firebase einrichten (einmalig, kostenlos)
 
