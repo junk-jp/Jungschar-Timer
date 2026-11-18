@@ -588,7 +588,7 @@
       ? encodeURIComponent(btoa(JSON.stringify(cfg)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))
       : null;
     const base = location.origin + location.pathname.replace(/index\.html$/, '') + 'slave.html';
-    const url = base + '?room=' + room + (cfgParam ? '&cfg=' + cfgParam : '');
+    const url = base + '?v=v1.3&room=' + room + (cfgParam ? '&cfg=' + cfgParam : '');
     $('slaveLink').value = url;
     $('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(url);
   }

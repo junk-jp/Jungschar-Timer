@@ -134,6 +134,9 @@
   const params = new URLSearchParams(location.search);
 
   let room = (params.get('room') || '').toUpperCase();
+  if (!room) {
+    try { room = (localStorage.getItem('mtSlaveRoom') || '').toUpperCase(); } catch (e) {}
+  }
   let cfg = null;
   let cfgStatus = 'FEHLT im Link – bitte unten einfügen oder neuen Slave-Link von der Master-Seite kopieren';
   function b64url(s) {
@@ -238,6 +241,7 @@
     firebase.initializeApp(config);
     db = firebase.database();
     if (room) {
+      try { localStorage.setItem('mtSlaveRoom', room); } catch (e) {}
       db.ref('rooms/' + room + '/state').on('value', snap => { state = snap.val(); onState(); });
       db.ref('rooms/' + room + '/last').on('value', snap => onEvent(snap.val()));
     }
