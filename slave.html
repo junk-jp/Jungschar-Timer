@@ -77,6 +77,13 @@
     margin-bottom: 12px; text-align: center; letter-spacing: 0.25em; text-transform: uppercase; outline: none;
   }
   .gate input:focus { border-color: var(--accent); }
+  .dbg {
+    font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted);
+    background: #141824; border: 1px solid #2a3145; border-radius: 8px;
+    padding: 8px 10px; margin-bottom: 14px; text-align: left; line-height: 1.6; word-break: break-all;
+  }
+  .dbg b.bad { color: var(--danger); }
+  .dbg b.ok { color: var(--accent2); }
   .connline { color: var(--muted); font-size: 13px; margin-top: 16px; }
   .gearbtn {
     position: fixed; top: 14px; right: 14px; z-index: 40;
@@ -98,6 +105,7 @@
   <div class="warn" id="dWarn">⚠️ Keine Verbindung zum Master – prüfe, ob der Timer dort noch läuft.</div>
   <button class="btnsound hidden" id="btnSound">🔊 Ton aktivieren</button>
   <div class="connline" id="connText"></div>
+  <div style="opacity:.4;font-size:11px;margin-top:8px;">v1.2</div>
 </div>
 <button class="gearbtn" id="btnGear">⚙️</button>
 
@@ -105,6 +113,7 @@
   <h2>⏱️ Timer Anzeige</h2>
   <p class="hidden" id="gateP">Tippe unten, damit der Endton auf diesem Gerät abgespielt werden darf (Browser-Sicherheit).</p>
   <div class="setup hidden" id="gateSetup">
+    <div class="dbg" id="dbg"></div>
     <label>Room-Code von der Master-Seite</label>
     <input id="roomInput" maxlength="6" placeholder="z. B. K7T2XM" autocapitalize="characters" autocomplete="off">
     <p class="howto">Firebase-Konfiguration (steht normalerweise automatisch im Slave-Link):<br>
@@ -125,15 +134,27 @@
 
   let room = (params.get('room') || '').toUpperCase();
   let cfg = null;
+  let cfgStatus = 'FEHLT im Link – bitte unten einfügen oder neuen Slave-Link von der Master-Seite kopieren';
+  function b64url(s) {
+    s = String(s).trim().replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, '');
+    while (s.length % 4) s += '=';
+    return atob(s);
+  }
   if (params.get('cfg')) {
     try {
-      cfg = JSON.parse(atob(params.get('cfg')));
-      localStorage.setItem(LS_CFG, JSON.stringify(cfg));
-    } catch (e) {}
+      cfg = JSON.parse(b64url(params.get('cfg')));
+      try { localStorage.setItem(LS_CFG, JSON.stringify(cfg)); } catch (e) {}
+      cfgStatus = null;
+    } catch (e) {
+      cfgStatus = 'IM Link, aber unlesbar (' + e.message + ') – bitte neuen Slave-Link von der Master-Seite kopieren';
+    }
   }
   if (!cfg) {
     try { cfg = JSON.parse(localStorage.getItem(LS_CFG) || 'null'); } catch (e) { cfg = null; }
+    if (cfg && cfgStatus !== null) cfgStatus = 'aus dem Speicher dieses Browsers geladen';
   }
+  let lsOk = true;
+  try { localStorage.setItem('mtTest', '1'); localStorage.removeItem('mtTest'); } catch (e) { lsOk = false; }
 
   let db = null;
   let state = null;
@@ -287,16 +308,27 @@
     $('gateP').classList.add('hidden');
     $('btnSound').classList.add('hidden');
     $('gateSetup').classList.remove('hidden');
+    renderDbg();
     if (room) $('roomInput').value = room;
     $('cfgInput').value = cfg ? 'firebaseConfig = ' + JSON.stringify(cfg, null, 2) : '';
     $('cfgErr').textContent = '';
   };
+
+  function renderDbg() {
+    const dbg = $('dbg');
+    dbg.innerHTML =
+      'Geöffneter Link:<br>' +
+      '· Room-Code: ' + (room ? '<b class="ok">' + room + '</b>' : '<b class="bad">FEHLT</b>') + '<br>' +
+      '· Firebase-Konfig: ' + (cfgStatus === null ? '<b class="ok">im Link enthalten ✓</b>' : '<b class="bad">' + cfgStatus + '</b>') +
+      (!lsOk ? '<br><b class="bad">⚠️ localStorage blockiert (privater Modus?) – bitte den vollständigen Slave-Link verwenden</b>' : '');
+  }
 
   if (!room || !cfg) {
     $('gateP').classList.add('hidden');
     $('btnSound').classList.add('hidden');
     $('gateSetup').classList.remove('hidden');
     $('gate').classList.remove('hidden');
+    renderDbg();
     if (room) $('roomInput').value = room;
     $('cfgInput').value = cfg ? 'firebaseConfig = ' + JSON.stringify(cfg, null, 2) : '';
   } else {
