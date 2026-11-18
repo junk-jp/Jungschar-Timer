@@ -18,6 +18,7 @@ Timer-System mit steuernder **Master-Seite** und ausgelagerter, per Link verteil
   - Spielt am Ende jedes Timers einen Ton ab: Wird der Ton vom Browser nicht automatisch freigegeben, erscheint nur ein dezenter Hinweisbutton – **ein Tipp irgendwo auf der Seite** schaltet den Ton frei (Browser-Sicherheitsregel)
   - **Ghost-Modus (v2.2):** Fällt die Verbindung zum Master aus (z. B. Handy im Hintergrund, Netzwechsel), läuft die Anzeige lokal weiter und schaltet am Timer-Ende selbstständig zum nächsten Timer weiter – **mit Ton**. Sobald der Master wieder sendet, gleicht sich die Anzeige automatisch zurück
   - **Selbstständige Wiederverbindung (v2.3):** Kehrt ein Slave-Gerät aus dem Hintergrund zurück, baut es die Firebase-Verbindung aktiv neu auf, falls nötig auch per harter Neuverbindung
+  - **Audio-Gesundheitscheck (v2.4):** iOS suspendiert die Tonausgabe nach Hintergrundphasen. Der Slave prüft alle 5 Sekunden, ob der Ton noch aktiv ist, versucht automatisch die Reaktivierung – und zeigt bei dauerhafter Blockade den Tipp-Hinweis erneut an
 
 ## Firebase einrichten (einmalig, kostenlos)
 
@@ -68,3 +69,4 @@ Alternativ funktioniert jede statische Hosting-Umgebung (Netlify, Vercel, Raspbe
 - **Wake Lock (v2.3):** Während ein Ablauf läuft, hält die Master-Seite den Bildschirm wach (Wake Lock API, iOS Safari ab 16.4) – so können Background-Timer nicht mehr einschlafen. Bei Pause/Stop/Ende wird die Sperre automatisch aufgehoben.
 - Der Ton wird per Web Audio API erzeugt, es sind keine Audio-Dateien nötig.
 - **iOS/iPadOS Safari:** Safari entfernt URL-Parameter (`?room=…`) beim Öffnen von Links aus manchen Apps (Schutz vor Link-Tracking). Deshalb funktionieren die Slave-Links über den **Pfad** (`…/r/XXXXXX`) und merken sich den Room zusätzlich im Browser – falls ein Puffer verloren geht, kann der Room-Code jederzeit über den ⚙️-Knopf neu eingegeben werden.
+- **Ton auf dem iPhone:** Achte darauf, dass ① der Klingelton-/Stummschalter (orange!) **nicht** aktiviert ist – iOS schluckt Web-Töne bei aktivierter Stummschaltung – und ② die Seitenlautstärke (mit dem Timer geöffnet) hochgedreht ist.
