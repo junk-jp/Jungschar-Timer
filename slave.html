@@ -117,11 +117,13 @@
     <div class="dbg" id="dbg"></div>
     <label>Room-Code von der Master-Seite</label>
     <input id="roomInput" maxlength="6" placeholder="z. B. K7T2XM" autocapitalize="characters" autocomplete="off">
-    <p class="howto">Firebase-Konfiguration (steht normalerweise automatisch im Slave-Link):<br>
-      Auf der Master-Seite „⚙ Firebase-Einstellungen ändern" → dort den <code>firebaseConfig</code>-Abschnitt kopieren und hier einfügen.</p>
-    <textarea id="cfgInput" placeholder='firebaseConfig = { apiKey: "…", databaseURL: "…" }'></textarea>
+    <div class="hidden" id="cfgSection">
+      <p class="howto">Nur nötig, wenn du eine andere Firebase-Datenbank nutzen willst – die Standard-Konfiguration ist bereits eingebaut. Zum Ändern aufklappen und den <code>firebaseConfig</code>-Abschnitt einfügen.</p>
+      <textarea id="cfgInput" placeholder='firebaseConfig = { apiKey: "…", databaseURL: "…" }'></textarea>
+    </div>
     <div class="err" id="cfgErr"></div>
     <button class="btnsound" id="btnSaveCfg" style="width:100%;">Speichern & verbinden</button>
+    <button id="btnToggleCfg" style="width:100%;margin-top:8px;background:transparent;border:1px solid #2a3145;color:var(--muted);padding:7px;border-radius:8px;font-size:12px;">Firebase-Konfiguration anzeigen/ändern</button>
   </div>
 </div>
 
@@ -335,14 +337,22 @@
       $('cfgErr').textContent = 'Bitte den 6-stelligen Room-Code von der Master-Seite eingeben.';
       return;
     }
-    const parsed = parseConfig($('cfgInput').value);
+    const parsed = $('cfgSection').classList.contains('hidden') ? cfg : parseConfig($('cfgInput').value);
     if (!parsed || !parsed.apiKey) {
-      $('cfgErr').textContent = 'Konfiguration konnte nicht gelesen werden – bitte den kompletten firebaseConfig-Abschnitt aus der Master-Seite oder aus Projekt-Einstellungen → Ihre Apps einfügen.';
+      $('cfgErr').textContent = 'Konfiguration konnte nicht gelesen werden – bitte den kompletten firebaseConfig-Abschnitt einfügen.';
       return;
     }
     localStorage.setItem(LS_CFG, JSON.stringify(parsed));
     $('cfgErr').textContent = '';
     location.href = location.pathname + '?room=' + newRoom + (params.get('cfg') ? '&cfg=' + encodeURIComponent(params.get('cfg')) : '');
+  };
+
+  $('btnToggleCfg').onclick = () => {
+    const sec = $('cfgSection');
+    sec.classList.toggle('hidden');
+    if (!sec.classList.contains('hidden') && !$('cfgInput').value) {
+      $('cfgInput').value = cfg ? 'firebaseConfig = ' + JSON.stringify(cfg, null, 2) : '';
+    }
   };
 
   $('btnGear').onclick = () => {
