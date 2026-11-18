@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timer wird geladen…</title>
+</head>
+<body>
+<p style="font-family:sans-serif;">Weiterleitung…</p>
+<script>
+(function () {
+  var m = location.pathname.match(/r\/([A-Za-z0-9]{6})\/?$/);
+  if (m) {
+    location.replace(location.pathname.replace(/r\/[A-Za-z0-9]{6}\/?$/, 'slave.html?v=2#room=' + m[1].toUpperCase()));
+  } else {
+    location.replace(location.pathname.replace(/\/[^\/]*$/, '/') + 'index.html');
+  }
+})();
+</script>
+</body>
+</html>

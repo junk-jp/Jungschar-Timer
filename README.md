@@ -10,8 +10,8 @@ Timer-System mit steuernder **Master-Seite** und ausgelagerter, per Link verteil
   - **Loop:** Anzahl der Wiederholungen frei wählbar – der komplette Ablauf läuft so oft durch
   - Start / Pause / Weiter / Überspringen / Stop
   - Live-Anzeige: aktueller Timer, Restzeit, Runde x von y, nächster Timer
-  - Room-Code + **fertiger Slave-Link** (inkl. Firebase-Konfiguration) + QR-Code zum Verteilen
-- **Slave (`slave.html?room=XXXXXX`)**
+  - Room-Code + **Kurzelink der Form `…/r/XXXXXX`** + QR-Code zum Verteilen
+- **Slave (`slave.html#room=XXXXXX`, erreicht über `/r/XXXXXX`)**
   - Nur-Anzeige-Steuerung: große Restzeit, Status, Fortschrittsbalken, Runde, nächster Timer
   - Warnt, wenn der Master länger als 6 Sekunden keine Updates sendet
   - Spielt am Ende jedes Timers einen Ton ab (Setup per Link vollautomatisch)
@@ -23,7 +23,7 @@ Timer-System mit steuernder **Master-Seite** und ausgelagerter, per Link verteil
 3. **Projekt-Einstellungen → Allgemein → Ihre Apps → Web-App** hinzufügen und den Abschnitt `firebaseConfig = { … }` kopieren.
 4. `index.html` im Browser öffnen → es erscheint ein Einrichtungsfenster → den `firebaseConfig`-Abschnitt einfügen → **Verbinden**.
 
-Die Konfiguration wird lokal im Browser gespeichert. Der Slave-Link bettet sie automatisch ein, sodass Zombies/Handys/Tablets ohne jede Einrichtung verbunden sind.
+Die Konfiguration wird lokal im Browser gespeichert. Der Slave braucht nichts mehr einzugeben: Eine Standard-Konfiguration ist **eingebaut** (Projekt `jungschar-timer`), und über den ⚙️-Knopf lässt sich jederzeit eine andere konfigurieren – auch nachträglich auf jedem Slave-Gerät.
 
 ### Database-Regeln
 
@@ -53,7 +53,7 @@ Hinweis: Wer den 6-stelligen Room-Code kennt, kann den Timer lesen und steuern. 
 
 Beide Dateien sind komplett eigenständig (nur Firebase-SDK kommt vom CDN).
 
-1. Repository auf GitHub anlegen und `index.html` + `slave.html` hochladen.
+1. Repository auf GitHub anlegen und `index.html` + `slave.html` + `404.html` hochladen. Die `404.html` ist der Router für die Kurzelinks: `…/r/XXXXXX` landet automatisch auf der Slave-Anzeige mit dem richtigen Room.
 2. *Settings → Pages → Source: main branch, root* aktivieren.
 3. Aufrufen unter `https://<nutzer>.github.io/<repo>/` (Master) – Slave-Link verteilt sich daraus automatisch.
 
@@ -63,3 +63,4 @@ Alternativ funktioniert jede statische Hosting-Umgebung (Netlify, Vercel, Raspbe
 
 - Timer und Ablauf werden im `localStorage` des Master-Browsers gespeichert – die Master-Seite sollte also dauerhaft im selben Browser offen bleiben, während der Ablauf läuft.
 - Der Ton wird per Web Audio API erzeugt, es sind keine Audio-Dateien nötig.
+- **iOS/iPadOS Safari:** Safari entfernt URL-Parameter (`?room=…`) beim Öffnen von Links aus manchen Apps (Schutz vor Link-Tracking). Deshalb funktionieren die Slave-Links über den **Pfad** (`…/r/XXXXXX`) und merken sich den Room zusätzlich im Browser – falls ein Puffer verloren geht, kann der Room-Code jederzeit über den ⚙️-Knopf neu eingegeben werden.

@@ -96,7 +96,7 @@
 <body>
 <div class="wrap">
   <div class="roomtag" id="roomTag">ROOM ——</div>
-  <div style="opacity:.35;font-size:10px;margin-top:-14px;margin-bottom:16px;">v1.3</div>
+  <div style="opacity:.35;font-size:10px;margin-top:-14px;margin-bottom:16px;">v2.0</div>
   <div class="timername" id="dName">—</div>
   <div class="time idle" id="dTime">--:--</div>
   <div class="status" id="dStatus">Warte auf Master…</div>
@@ -106,12 +106,12 @@
   <div class="warn" id="dWarn">⚠️ Keine Verbindung zum Master – prüfe, ob der Timer dort noch läuft.</div>
   <button class="btnsound hidden" id="btnSound">🔊 Ton aktivieren</button>
   <div class="connline" id="connText"></div>
-  <div style="opacity:.4;font-size:11px;margin-top:8px;">v1.3</div>
+  <div style="opacity:.4;font-size:11px;margin-top:8px;">v2.0</div>
 </div>
 <button class="gearbtn" id="btnGear">⚙️</button>
 
 <div class="gate hidden" id="gate">
-  <h2>⏱️ Timer Anzeige <span style="font-size:11px;color:var(--muted)">v1.3</span></h2>
+  <h2>⏱️ Timer Anzeige <span style="font-size:11px;color:var(--muted)">v2.0</span></h2>
   <p class="hidden" id="gateP">Tippe unten, damit der Endton auf diesem Gerät abgespielt werden darf (Browser-Sicherheit).</p>
   <div class="setup hidden" id="gateSetup">
     <div class="dbg" id="dbg"></div>
@@ -241,14 +241,21 @@
     } catch (e) {}
   }
 
+  let connectedRoom = null;
+  function attachRoomListeners(r) {
+    try { localStorage.setItem('mtSlaveRoom', r); } catch (e) {}
+    firstEvent = true;
+    lastEventId = null;
+    state = null;
+    connectedRoom = r;
+    db.ref('rooms/' + r + '/state').on('value', snap => { state = snap.val(); onState(); });
+    db.ref('rooms/' + r + '/last').on('value', snap => onEvent(snap.val()));
+  }
+
   function connect(config) {
     firebase.initializeApp(config);
     db = firebase.database();
-    if (room) {
-      try { localStorage.setItem('mtSlaveRoom', room); } catch (e) {}
-      db.ref('rooms/' + room + '/state').on('value', snap => { state = snap.val(); onState(); });
-      db.ref('rooms/' + room + '/last').on('value', snap => onEvent(snap.val()));
-    }
+    if (room) attachRoomListeners(room);
     $('roomTag').textContent = 'ROOM ' + (room || '——');
     db.ref('.info/connected').on('value', snap => {
       $('connText').textContent = snap.val() === true ? 'Mit Firebase verbunden' : 'Verbinde mit Firebase…';
@@ -344,10 +351,26 @@
       $('cfgErr').textContent = 'Konfiguration konnte nicht gelesen werden – bitte den kompletten firebaseConfig-Abschnitt einfügen.';
       return;
     }
-    localStorage.setItem(LS_CFG, JSON.stringify(parsed));
-    try { localStorage.setItem('mtSlaveRoom', newRoom); } catch (e) {}
+    cfg = parsed;
+    room = newRoom;
+    try { localStorage.setItem(LS_CFG, JSON.stringify(cfg)); } catch (e) {}
     $('cfgErr').textContent = '';
-    location.href = location.pathname + '?v=v1.3#room=' + newRoom;
+    $('gateSetup').classList.add('hidden');
+    hashParams.set('room', room);
+    try { history.replaceState(null, '', location.pathname + '#room=' + room); } catch (e) {}
+    if (!db) {
+      connect(cfg);
+    } else if (room !== connectedRoom) {
+      attachRoomListeners(room);
+    }
+    if (audioUnlocked) {
+      $('gate').classList.add('hidden');
+    } else {
+      $('gateP').classList.remove('hidden');
+      $('btnSound').classList.remove('hidden');
+      $('gate').classList.remove('hidden');
+    }
+    render();
   };
 
   $('btnToggleCfg').onclick = () => {
@@ -392,6 +415,12 @@
     $('gate').classList.remove('hidden');
     connect(cfg);
   }
+
+  window.addEventListener('hashchange', () => {
+    const h = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const r = (h.get('room') || '').toUpperCase();
+    if (r && r !== room) location.reload();
+  });
 
   render();
 })();

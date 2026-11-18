@@ -112,7 +112,7 @@
 <body>
 <div class="wrap">
   <h1>⏱️ Timer Master</h1>
-  <div class="sub">Timer erstellen, Ablauf zusammenstellen, im Loop ablaufen lassen – Slaves sehen alles live. <span style="opacity:.5">· v1.3</span></div>
+  <div class="sub">Timer erstellen, Ablauf zusammenstellen, im Loop ablaufen lassen – Slaves sehen alles live. <span style="opacity:.5">· v2.0</span></div>
 
   <div class="display">
     <div class="timername" id="dName">—</div>
@@ -584,11 +584,8 @@
 
   function initLink() {
     $('roomCode').textContent = room;
-    const cfgParam = cfg
-      ? encodeURIComponent(btoa(JSON.stringify(cfg)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))
-      : null;
-    const base = location.origin + location.pathname.replace(/index\.html$/, '') + 'slave.html';
-    const url = base + '?v=v1.3#room=' + room + (cfgParam ? '&cfg=' + cfgParam : '');
+    const base = location.origin + location.pathname.replace(/index\.html$/, '');
+    const url = base + 'r/' + room;
     $('slaveLink').value = url;
     $('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(url);
   }
