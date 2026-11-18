@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timer Anzeige</title>
+<style>
+  :root {
+    --bg: #0f1117; --text: #e8eaf2; --muted: #8b91a7;
+    --accent: #4f8cff; --accent2: #22c55e; --danger: #ef4444; --warning: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .wrap { max-width: 560px; width: 100%; text-align: center; }
+  .roomtag {
+    display: inline-block; font-size: 12px; letter-spacing: 0.2em;
+    color: var(--muted); border: 1px solid #2a3145; border-radius: 99px;
+    padding: 4px 14px; margin-bottom: 20px;
+  }
+  .timername { font-size: 24px; font-weight: 600; min-height: 32px; }
+  .time {
+    font-size: clamp(72px, 22vw, 130px); font-weight: 800;
+    font-variant-numeric: tabular-nums; line-height: 1.05; margin: 8px 0;
+  }
+  .time.running { color: var(--text); }
+  .time.paused { color: var(--warning); }
+  .time.done { color: var(--accent2); }
+  .time.idle { color: #3a4157; }
+  .status {
+    display: inline-block; font-size: 13px; padding: 5px 14px;
+    border-radius: 99px; background: #1a1e2a; color: var(--muted); margin-bottom: 18px;
+  }
+  .status.running { color: var(--accent2); }
+  .status.paused { color: var(--warning); }
+  .bar { height: 10px; background: #1a1e2a; border-radius: 99px; overflow: hidden; margin-bottom: 18px; }
+  .bar > div { height: 100%; width: 0%; background: var(--accent); transition: width 0.25s linear; }
+  .next { color: var(--muted); font-size: 14px; min-height: 20px; margin-bottom: 8px; }
+  .round { color: var(--muted); font-size: 14px; min-height: 20px; }
+  .warn {
+    display: none; margin-top: 22px; font-size: 13px; color: var(--danger);
+    background: #2a1215; border: 1px solid #45161a; border-radius: 8px; padding: 10px;
+  }
+  .warn.show { display: block; }
+  .btnsound {
+    margin-top: 22px; padding: 14px 26px; font-size: 15px; border: none;
+    border-radius: 10px; background: var(--accent2); color: #06220f;
+    font-weight: 700; cursor: pointer;
+  }
+  .btnsound.hidden { display: none; }
+  .gate {
+    position: fixed; inset: 0; background: rgba(8,10,16,0.96);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; z-index: 50;
+  }
+  .gate.hidden { display: none; }
+  .gate h2 { margin-bottom: 14px; }
+  .gate p { color: var(--muted); font-size: 14px; margin-bottom: 20px; text-align: center; max-width: 380px; }
+  .gate .btnsound { margin: 0; }
+  .gate .setup { width: 100%; max-width: 480px; }
+  .gate textarea {
+    width: 100%; height: 120px; border-radius: 8px; border: 1px solid #333a4e;
+    background: #1a1e2a; color: var(--text); padding: 10px; margin-bottom: 10px;
+    font-family: monospace; font-size: 12px; resize: vertical;
+  }
+  .gate .err { color: var(--danger); font-size: 13px; margin-bottom: 8px; min-height: 15px; }
+  .gate p.howto { text-align: left; line-height: 1.6; margin-bottom: 12px; }
+  .gate a { color: var(--accent); }
+  .gate label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; text-align: left; }
+  .gate input {
+    width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #333a4e;
+    background: #1a1e2a; color: var(--text); font-size: 17px;
+    margin-bottom: 12px; text-align: center; letter-spacing: 0.25em; text-transform: uppercase; outline: none;
+  }
+  .gate input:focus { border-color: var(--accent); }
+  .connline { color: var(--muted); font-size: 13px; margin-top: 16px; }
+  .gearbtn {
+    position: fixed; top: 14px; right: 14px; z-index: 40;
+    background: #1a1e2a; color: var(--muted); border: 1px solid #2a3145;
+    border-radius: 8px; padding: 8px 11px; font-size: 15px; cursor: pointer;
+  }
+  .gearbtn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="roomtag" id="roomTag">ROOM ——</div>
+  <div class="timername" id="dName">—</div>
+  <div class="time idle" id="dTime">--:--</div>
+  <div class="status" id="dStatus">Warte auf Master…</div>
+  <div class="bar"><div id="dBar"></div></div>
+  <div class="next" id="dNext"></div>
+  <div class="round" id="dRound"></div>
+  <div class="warn" id="dWarn">⚠️ Keine Verbindung zum Master – prüfe, ob der Timer dort noch läuft.</div>
+  <button class="btnsound hidden" id="btnSound">🔊 Ton aktivieren</button>
+  <div class="connline" id="connText"></div>
+</div>
+<button class="gearbtn" id="btnGear">⚙️</button>
+
+<div class="gate hidden" id="gate">
+  <h2>⏱️ Timer Anzeige</h2>
+  <p class="hidden" id="gateP">Tippe unten, damit der Endton auf diesem Gerät abgespielt werden darf (Browser-Sicherheit).</p>
+  <div class="setup hidden" id="gateSetup">
+    <label>Room-Code von der Master-Seite</label>
+    <input id="roomInput" maxlength="6" placeholder="z. B. K7T2XM" autocapitalize="characters" autocomplete="off">
+    <p class="howto">Firebase-Konfiguration (steht normalerweise automatisch im Slave-Link):<br>
+      Auf der Master-Seite „⚙ Firebase-Einstellungen ändern" → dort den <code>firebaseConfig</code>-Abschnitt kopieren und hier einfügen.</p>
+    <textarea id="cfgInput" placeholder='firebaseConfig = { apiKey: "…", databaseURL: "…" }'></textarea>
+    <div class="err" id="cfgErr"></div>
+    <button class="btnsound" id="btnSaveCfg" style="width:100%;">Speichern & verbinden</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const LS_CFG = 'mtFbCfg';
+  const params = new URLSearchParams(location.search);
+
+  let room = (params.get('room') || '').toUpperCase();
+  let cfg = null;
+  if (params.get('cfg')) {
+    try {
+      cfg = JSON.parse(atob(params.get('cfg')));
+      localStorage.setItem(LS_CFG, JSON.stringify(cfg));
+    } catch (e) {}
+  }
+  if (!cfg) {
+    try { cfg = JSON.parse(localStorage.getItem(LS_CFG) || 'null'); } catch (e) { cfg = null; }
+  }
+
+  let db = null;
+  let state = null;
+  let baseRemaining = 0;
+  let baseAt = 0;
+  let lastEventId = null;
+  let firstEvent = true;
+  let audioCtx = null;
+  let audioUnlocked = false;
+
+  function fmt(ms) {
+    ms = Math.max(0, Math.ceil(ms / 1000));
+    const h = Math.floor(ms / 3600), m = Math.floor(ms % 3600 / 60), s = ms % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
+  }
+
+  function beep(kind) {
+    if (!audioUnlocked) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const notes = kind === 'sequence'
+        ? [[880, 0], [1100, 0.18], [1320, 0.36], [1760, 0.58]]
+        : [[880, 0], [880, 0.22], [880, 0.44]];
+      notes.forEach(([freq, delay]) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = 'sine';
+        o.frequency.value = freq;
+        o.connect(g); g.connect(audioCtx.destination);
+        const t0 = audioCtx.currentTime + delay;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.5, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+        o.start(t0); o.stop(t0 + 0.2);
+      });
+    } catch (e) {}
+  }
+
+  function connect(config) {
+    firebase.initializeApp(config);
+    db = firebase.database();
+    if (room) {
+      db.ref('rooms/' + room + '/state').on('value', snap => { state = snap.val(); onState(); });
+      db.ref('rooms/' + room + '/last').on('value', snap => onEvent(snap.val()));
+    }
+    $('roomTag').textContent = 'ROOM ' + (room || '——');
+    db.ref('.info/connected').on('value', snap => {
+      $('connText').textContent = snap.val() === true ? 'Mit Firebase verbunden' : 'Verbinde mit Firebase…';
+    });
+  }
+
+  function onEvent(ev) {
+    if (!ev || !ev.id) return;
+    if (firstEvent) { firstEvent = false; lastEventId = ev.id; return; }
+    if (ev.id === lastEventId) return;
+    lastEventId = ev.id;
+    if (ev.event === 'timer-end') beep('timer');
+    else if (ev.event === 'sequence-end') beep('sequence');
+  }
+
+  function displayRemaining() {
+    if (!state) return 0;
+    if (state.phase === 'running') return baseRemaining - (Date.now() - baseAt);
+    return state.remainingMs;
+  }
+
+  function onState() {
+    baseRemaining = state.remainingMs || 0;
+    baseAt = Date.now();
+    render();
+  }
+
+  function render() {
+    if (!room) {
+      $('dName').textContent = 'Kein Room angegeben';
+      $('dStatus').textContent = 'Link ohne ?room=… geöffnet';
+      $('dTime').textContent = '--:--';
+      return;
+    }
+    $('roomTag').textContent = 'ROOM ' + room;
+    if (!state) {
+      $('dStatus').textContent = 'Verbinde mit Firebase…';
+      return;
+    }
+    const rem = displayRemaining();
+    const nameEl = $('dName');
+    nameEl.textContent = state.timerName || '—';
+    const timeEl = $('dTime');
+    timeEl.className = 'time ' + state.phase;
+    timeEl.textContent = state.phase === 'idle' ? '--:--' : fmt(rem);
+    const st = $('dStatus');
+    st.className = 'status ' + state.phase;
+    if (state.phase === 'running') st.textContent = 'läuft';
+    else if (state.phase === 'paused') st.textContent = 'pausiert';
+    else if (state.phase === 'done') st.textContent = 'ablauf beendet';
+    else st.textContent = state.seq && state.seq.length ? 'bereit' : 'kein ablauf aktiv';
+    if (state.phase === 'running' && state.timerDur) {
+      $('dBar').style.width = Math.min(100, Math.max(0, 100 * (1 - rem / state.timerDur))) + '%';
+    } else if (state.phase === 'done') { $('dBar').style.width = '100%'; }
+    else { $('dBar').style.width = rem ? String(100 * (1 - (rem || 0) / (state.timerDur || 1))) + '%' : '0%'; }
+    $('dNext').textContent = state.nextName ? 'Danach: ' + state.nextName : '';
+    if (state.reps && state.phase !== 'idle') {
+      $('dRound').textContent = 'Runde ' + state.rep + ' / ' + state.reps;
+    } else {
+      $('dRound').textContent = '';
+    }
+    const stale = state.phase === 'running' && Date.now() - (state.updatedAt || 0) > 6000;
+    $('dWarn').classList.toggle('show', stale);
+  }
+
+  setInterval(() => { if (state) render(); }, 300);
+
+  function unlockAudio() {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + 0.05);
+      audioUnlocked = true;
+      $('btnSound').classList.add('hidden');
+      $('gate').classList.add('hidden');
+      beep('timer');
+    } catch (e) {}
+  }
+  $('btnSound').onclick = unlockAudio;
+
+  $('btnSaveCfg').onclick = () => {
+    const newRoom = ($('roomInput').value || room || '').trim().toUpperCase();
+    if (!/^[A-Z2-9]{6}$/.test(newRoom)) {
+      $('cfgErr').textContent = 'Bitte den 6-stelligen Room-Code von der Master-Seite eingeben.';
+      return;
+    }
+    const text = $('cfgInput').value.replace(/^\s*firebaseConfig\s*=\s*/m, '').replace(/;\s*$/, '').trim();
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch (e) {}
+    if (!parsed || !parsed.apiKey) {
+      $('cfgErr').textContent = 'Konnte die Konfiguration nicht lesen – bitte den firebaseConfig-Abschnitt einfügen.';
+      return;
+    }
+    localStorage.setItem(LS_CFG, JSON.stringify(parsed));
+    $('cfgErr').textContent = '';
+    location.href = location.pathname + '?room=' + newRoom + (params.get('cfg') ? '&cfg=' + encodeURIComponent(params.get('cfg')) : '');
+  };
+
+  $('btnGear').onclick = () => {
+    $('gate').classList.remove('hidden');
+    $('gateP').classList.add('hidden');
+    $('btnSound').classList.add('hidden');
+    $('gateSetup').classList.remove('hidden');
+    if (room) $('roomInput').value = room;
+    $('cfgInput').value = cfg ? 'firebaseConfig = ' + JSON.stringify(cfg, null, 2) : '';
+    $('cfgErr').textContent = '';
+  };
+
+  if (!room || !cfg) {
+    $('gateP').classList.add('hidden');
+    $('btnSound').classList.add('hidden');
+    $('gateSetup').classList.remove('hidden');
+    $('gate').classList.remove('hidden');
+    if (room) $('roomInput').value = room;
+    $('cfgInput').value = cfg ? 'firebaseConfig = ' + JSON.stringify(cfg, null, 2) : '';
+  } else {
+    $('gateP').classList.remove('hidden');
+    $('btnSound').classList.remove('hidden');
+    $('gate').classList.remove('hidden');
+    connect(cfg);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
