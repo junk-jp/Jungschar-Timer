@@ -17,6 +17,7 @@ Timer-System mit steuernder **Master-Seite** und ausgelagerter, per Link verteil
   - Warnt, wenn der Master länger als 6 Sekunden keine Updates sendet
   - Spielt am Ende jedes Timers einen Ton ab: Wird der Ton vom Browser nicht automatisch freigegeben, erscheint nur ein dezenter Hinweisbutton – **ein Tipp irgendwo auf der Seite** schaltet den Ton frei (Browser-Sicherheitsregel)
   - **Ghost-Modus (v2.2):** Fällt die Verbindung zum Master aus (z. B. Handy im Hintergrund, Netzwechsel), läuft die Anzeige lokal weiter und schaltet am Timer-Ende selbstständig zum nächsten Timer weiter – **mit Ton**. Sobald der Master wieder sendet, gleicht sich die Anzeige automatisch zurück
+  - **Selbstständige Wiederverbindung (v2.3):** Kehrt ein Slave-Gerät aus dem Hintergrund zurück, baut es die Firebase-Verbindung aktiv neu auf, falls nötig auch per harter Neuverbindung
 
 ## Firebase einrichten (einmalig, kostenlos)
 
@@ -64,5 +65,6 @@ Alternativ funktioniert jede statische Hosting-Umgebung (Netlify, Vercel, Raspbe
 ## Hinweise
 
 - Timer und Ablauf werden im `localStorage` des Master-Browsers gespeichert – die Master-Seite sollte also dauerhaft im selben Browser offen bleiben, während der Ablauf läuft.
+- **Wake Lock (v2.3):** Während ein Ablauf läuft, hält die Master-Seite den Bildschirm wach (Wake Lock API, iOS Safari ab 16.4) – so können Background-Timer nicht mehr einschlafen. Bei Pause/Stop/Ende wird die Sperre automatisch aufgehoben.
 - Der Ton wird per Web Audio API erzeugt, es sind keine Audio-Dateien nötig.
 - **iOS/iPadOS Safari:** Safari entfernt URL-Parameter (`?room=…`) beim Öffnen von Links aus manchen Apps (Schutz vor Link-Tracking). Deshalb funktionieren die Slave-Links über den **Pfad** (`…/r/XXXXXX`) und merken sich den Room zusätzlich im Browser – falls ein Puffer verloren geht, kann der Room-Code jederzeit über den ⚙️-Knopf neu eingegeben werden.
