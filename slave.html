@@ -52,6 +52,7 @@
     font-weight: 700; cursor: pointer;
   }
   .btnsound.hidden { display: none; }
+  .btnsound.mini { padding: 7px 14px; font-size: 12px; opacity: .5; background: #1a1e2a; color: var(--text); font-weight: 400; }
   .gate {
     position: fixed; inset: 0; background: rgba(8,10,16,0.96);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -98,7 +99,7 @@
 <body>
 <div class="wrap">
   <div class="roomtag" id="roomTag">ROOM ——</div>
-  <div style="opacity:.35;font-size:10px;margin-top:-14px;margin-bottom:16px;">v2.5</div>
+  <div style="opacity:.35;font-size:10px;margin-top:-14px;margin-bottom:16px;">v2.6</div>
   <div class="timername" id="dName">—</div>
   <div class="time idle" id="dTime">--:--</div>
   <div class="status" id="dStatus">Warte auf Master…</div>
@@ -109,12 +110,12 @@
   <button class="btnsound hidden" id="btnSound">🔊 Ton testen</button>
   <div class="audiohint hidden" id="audioHint">Testton gespielt – hörst du ihn? Wenn nicht: Stummschalter des Geräts (Klingelton an!) und Lautstärke bei geöffneter Seite hochdrehen.</div>
   <div class="connline" id="connText"></div>
-  <div style="opacity:.4;font-size:11px;margin-top:8px;">v2.5</div>
+  <div style="opacity:.4;font-size:11px;margin-top:8px;">v2.6</div>
 </div>
 <button class="gearbtn" id="btnGear">⚙️</button>
 
 <div class="gate hidden" id="gate">
-  <h2>⏱️ Timer Anzeige <span style="font-size:11px;color:var(--muted)">v2.5</span></h2>
+  <h2>⏱️ Timer Anzeige <span style="font-size:11px;color:var(--muted)">v2.6</span></h2>
   <p class="hidden" id="gateP">Tippe unten, damit der Endton auf diesem Gerät abgespielt werden darf (Browser-Sicherheit).</p>
   <div class="setup hidden" id="gateSetup">
     <div class="dbg" id="dbg"></div>
@@ -434,7 +435,7 @@
       o.connect(g); g.connect(audioCtx.destination);
       o.start(); o.stop(audioCtx.currentTime + 0.05);
       audioUnlocked = true;
-      $('btnSound').classList.add('hidden');
+      $('btnSound').classList.add('mini');
       $('gate').classList.add('hidden');
       $('audioHint').classList.remove('hidden');
       beep('timer');
@@ -450,6 +451,7 @@
   };
   function audioTap() { if (!audioUnlocked) unlockAudio(); }
   function showSoundHint() {
+    $('btnSound').classList.remove('mini');
     $('btnSound').classList.remove('hidden');
     document.addEventListener('click', audioTap, { once: true });
     document.addEventListener('touchstart', audioTap, { once: true });
@@ -525,7 +527,13 @@
     $('gate').classList.add('hidden');
     try {
       const ac = new (window.AudioContext || window.webkitAudioContext)();
-      if (ac.state === 'running') { audioCtx = ac; audioUnlocked = true; beep('timer'); }
+      if (ac.state === 'running') {
+        audioCtx = ac;
+        audioUnlocked = true;
+        $('btnSound').classList.remove('hidden');
+        $('btnSound').classList.add('mini');
+        beep('timer');
+      }
       else { try { ac.resume(); } catch (e) {} }
     } catch (e) {}
     if (!audioUnlocked) showSoundHint();
