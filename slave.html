@@ -96,6 +96,7 @@
 <body>
 <div class="wrap">
   <div class="roomtag" id="roomTag">ROOM ——</div>
+  <div style="opacity:.35;font-size:10px;margin-top:-14px;margin-bottom:16px;">v1.3</div>
   <div class="timername" id="dName">—</div>
   <div class="time idle" id="dTime">--:--</div>
   <div class="status" id="dStatus">Warte auf Master…</div>
@@ -110,7 +111,7 @@
 <button class="gearbtn" id="btnGear">⚙️</button>
 
 <div class="gate hidden" id="gate">
-  <h2>⏱️ Timer Anzeige</h2>
+  <h2>⏱️ Timer Anzeige <span style="font-size:11px;color:var(--muted)">v1.3</span></h2>
   <p class="hidden" id="gateP">Tippe unten, damit der Endton auf diesem Gerät abgespielt werden darf (Browser-Sicherheit).</p>
   <div class="setup hidden" id="gateSetup">
     <div class="dbg" id="dbg"></div>
@@ -153,6 +154,16 @@
     try { cfg = JSON.parse(localStorage.getItem(LS_CFG) || 'null'); } catch (e) { cfg = null; }
     if (cfg && cfgStatus !== null) cfgStatus = 'aus dem Speicher dieses Browsers geladen';
   }
+  const DEFAULT_CONFIG = {
+    apiKey: 'AIzaSyAzCKMhARUrW_dWSql8I0g5zJWtsR9XGJ0',
+    authDomain: 'jungschar-timer.firebaseapp.com',
+    databaseURL: 'https://jungschar-timer-default-rtdb.europe-west1.firebasedatabase.app',
+    projectId: 'jungschar-timer',
+    storageBucket: 'jungschar-timer.firebasestorage.app',
+    messagingSenderId: '36101501807',
+    appId: '1:36101501807:web:e250027b1116aa04a52e9a'
+  };
+  if (!cfg) { cfg = DEFAULT_CONFIG; cfgStatus = 'eingebaute Standard-Konfiguration'; }
   let lsOk = true;
   try { localStorage.setItem('mtTest', '1'); localStorage.removeItem('mtTest'); } catch (e) { lsOk = false; }
 

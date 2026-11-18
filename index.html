@@ -112,7 +112,7 @@
 <body>
 <div class="wrap">
   <h1>⏱️ Timer Master</h1>
-  <div class="sub">Timer erstellen, Ablauf zusammenstellen, im Loop ablaufen lassen – Slaves sehen alles live. <span style="opacity:.5">· v1.2</span></div>
+  <div class="sub">Timer erstellen, Ablauf zusammenstellen, im Loop ablaufen lassen – Slaves sehen alles live. <span style="opacity:.5">· v1.3</span></div>
 
   <div class="display">
     <div class="timername" id="dName">—</div>
@@ -216,8 +216,18 @@
   let reps = parseInt(localStorage.getItem(LS_REPS) || '3', 10) || 3;
   $('repCount').value = reps;
 
+  const DEFAULT_CONFIG = {
+    apiKey: 'AIzaSyAzCKMhARUrW_dWSql8I0g5zJWtsR9XGJ0',
+    authDomain: 'jungschar-timer.firebaseapp.com',
+    databaseURL: 'https://jungschar-timer-default-rtdb.europe-west1.firebasedatabase.app',
+    projectId: 'jungschar-timer',
+    storageBucket: 'jungschar-timer.firebasestorage.app',
+    messagingSenderId: '36101501807',
+    appId: '1:36101501807:web:e250027b1116aa04a52e9a'
+  };
   let cfg = null;
   try { cfg = JSON.parse(localStorage.getItem(LS_CFG) || 'null'); } catch (e) { cfg = null; }
+  if (!cfg) cfg = DEFAULT_CONFIG;
 
   let room = localStorage.getItem(LS_ROOM);
   if (!room || !/^[A-Z2-9]{6}$/.test(room)) {
@@ -564,8 +574,7 @@
     location.reload();
   };
   $('btnCfgCancel').onclick = () => {
-    if (cfg) $('setupOverlay').classList.add('hidden');
-    else $('cfgErr').textContent = 'Erstes Setup: bitte eine Firebase-Konfiguration eingeben, sonst funktioniert die Synchronisation nicht.';
+    $('setupOverlay').classList.add('hidden');
   };
   $('btnCfg').onclick = () => {
     $('cfgInput').value = cfg ? 'firebaseConfig = ' + JSON.stringify(cfg, null, 2) : '';
@@ -590,8 +599,7 @@
   initLink();
   startLoop();
 
-  if (cfg) connect(cfg);
-  else $('setupOverlay').classList.remove('hidden');
+  connect(cfg);
 })();
 </script>
 </body>
