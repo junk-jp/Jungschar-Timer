@@ -1,0 +1,65 @@
+# 🏊 Multi-Timer mit Master/Slave-Sync
+
+Timer-System mit steuernder **Master-Seite** und ausgelagerter, per Link verteilbarer **Slave-Anzeige**. Alle Geräte synchronisieren sich in Echtzeit über **Firebase Realtime Database** (kostenloser Spark-Tarif reicht völlig aus). Am Ende jedes Timers sowie am Ende des gesamten Ablaufs ertönt auf allen Geräten ein Signalton.
+
+## Features
+
+- **Master (`index.html`)**
+  - Beliebig viele Timer anlegen (Name + Minuten + Sekunden), dauerhaft im Browser gespeichert
+  - Ablauf zusammenstellen: Timer per Klick in eine Reihenfolge bringen, umsortieren, entfernen
+  - **Loop:** Anzahl der Wiederholungen frei wählbar – der komplette Ablauf läuft so oft durch
+  - Start / Pause / Weiter / Überspringen / Stop
+  - Live-Anzeige: aktueller Timer, Restzeit, Runde x von y, nächster Timer
+  - Room-Code + **fertiger Slave-Link** (inkl. Firebase-Konfiguration) + QR-Code zum Verteilen
+- **Slave (`slave.html?room=XXXXXX`)**
+  - Nur-Anzeige-Steuerung: große Restzeit, Status, Fortschrittsbalken, Runde, nächster Timer
+  - Warnt, wenn der Master länger als 6 Sekunden keine Updates sendet
+  - Spielt am Ende jedes Timers einen Ton ab (Setup per Link vollautomatisch)
+
+## Firebase einrichten (einmalig, kostenlos)
+
+1. Kostenloses Google-Projekt auf [console.firebase.google.com](https://console.firebase.google.com) anlegen.
+2. Im Projekt **„Realtime Database"** erstellen (Standort beliebig, **Testmodus** wählen).
+3. **Projekt-Einstellungen → Allgemein → Ihre Apps → Web-App** hinzufügen und den Abschnitt `firebaseConfig = { … }` kopieren.
+4. `index.html` im Browser öffnen → es erscheint ein Einrichtungsfenster → den `firebaseConfig`-Abschnitt einfügen → **Verbinden**.
+
+Die Konfiguration wird lokal im Browser gespeichert. Der Slave-Link bettet sie automatisch ein, sodass Zombies/Handys/Tablets ohne jede Einrichtung verbunden sind.
+
+### Database-Regeln
+
+Im Testmodus (30 Tage) sind Lesen/Schreiben offen. Für den Dauerbetrieb in der Firebase-Konsole unter *Realtime Database → Regeln* z. B. eintragen:
+
+```json
+{
+  "rules": {
+    "rooms": {
+      "$room": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
+```
+
+Hinweis: Wer den 6-stelligen Room-Code kennt, kann den Timer lesen und steuern. Für nicht-öffentliche Zwecke ist das in der Regel unkritisch; den Code einfach nur mit den eigenen Geräten teilen.
+
+## Slave-Seite öffnen
+
+- link aus der Master-Seite kopieren (oder QR-Code scannen) und auf den anderen Geräten öffnen
+- Auf jedem Slave einmal auf **🔊 Ton aktivieren** tippen – sonst blockiert der Browser den Endton. Danach spielt das Gerät bei jedem Timer-Ende automatisch mit an.
+
+## Hosting (z. B. GitHub Pages)
+
+Beide Dateien sind komplett eigenständig (nur Firebase-SDK kommt vom CDN).
+
+1. Repository auf GitHub anlegen und `index.html` + `slave.html` hochladen.
+2. *Settings → Pages → Source: main branch, root* aktivieren.
+3. Aufrufen unter `https://<nutzer>.github.io/<repo>/` (Master) – Slave-Link verteilt sich daraus automatisch.
+
+Alternativ funktioniert jede statische Hosting-Umgebung (Netlify, Vercel, Raspberry Pi mit nginx, …).
+
+## Hinweise
+
+- Timer und Ablauf werden im `localStorage` des Master-Browsers gespeichert – die Master-Seite sollte also dauerhaft im selben Browser offen bleiben, während der Ablauf läuft.
+- Der Ton wird per Web Audio API erzeugt, es sind keine Audio-Dateien nötig.
